@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <style>
+            @import url('sp://import/css/eve.css');
+            @import url('sp://enplayer/css/main.css');
+            @import url('sp://enplayer/css/github.css');
+        </style>
+
+        <script src="sp://enplayer/js/jquery.min.js"></script>
+        <script src="sp://enplayer/js/rainbow-custom.min.js"></script>
+
+        <script>
+			jQuery.ajaxSettings.traditional = true;  
+
+            $(document).ready(function() {
+                /* Instantiate the global sp object; include models & views */
+                var sp = getSpotifyApi(1);
+                var models = sp.require('sp://import/scripts/api/models');
+
+            });
+
+var enSongs = [];
+var enToSpotIds = {};
+
+var counts = 0; // spinlock
+
+var pl;
+
+function make_it() {
+	playlistName = $("#_name").val();
+	songIDs = $("#_ids").val();
+	
+	enSongs = new Array();
+	
+	if( ""===playlistName || ""===songIDs ) {
+		alert( "You need to provide both a playlist name and IDs");
+	} else {
+        var sp = getSpotifyApi(1);
+        var models = sp.require('sp://import/scripts/api/models');
+		
+		pl = new models.Playlist( playlistName );
+		
+		var lines = songIDs.split( "\n" );
+		
+		for( i = 0; i < lines.length; i++ ) {
+			_line = lines[i];
+			_song = _line.indexOf( "SO");
+			_thesong = _line.substring( _song, _song + 18 );
+			console.log( "_line is " + _line);
+			console.log( "_thesong is " + _thesong );
+			
+			if( _thesong ) {
+				enSongs.push( _thesong );
+				++counts;
+				lookupSpotifyID( _thesong );
+			} else {
+				console.log( "skipping blank song");
+			}
+		}
+		
+		waitForResults();
+	}
+}
+
+function waitForResults() {
+	if( counts < 1 ) {
+		finishIt();
+	} else {
+		setTimeout( waitForResults, 500 );
+	}
+}
+
+function finishIt() {
+	console.log("*** in finishIt");
+	for( i = 0; i < enSongs.length; i++ ) {
+		_song = enSongs[ i ];
+		_spotifyTrack = enToSpotIds[ _song ];
+		console.log( "EN Song ID " + _song + " is " + _spotifyTrack );
+		pl.add( _spotifyTrack );
+	}
+}
+
+
+function lookupSpotifyID( _song ) {
+	var url = "http://developer.echonest.com/api/v4/song/profile?api_key=EIB5LKB6YDEG5TM2Q&callback=?";
+	
+	$.getJSON( url, 
+		{
+			"id": _song,
+			"format": "jsonp",
+			'bucket': ['tracks', 'id:spotify-WW'],
+			"limit": true
+		},
+		function(data) {
+			var response = data.response;
+			var songs = response.songs;
+			var tracks = songs[0].tracks;
+			//TODO if there are multiple tracks, check them all to see which are valid in this region...
+			
+			var _track = tracks[0];
+			var _trackID = _track.foreign_id.replace("spotify-WW", "spotify");
+			enToSpotIds[ songs[0].id ] = _trackID;
+			console.log( "EN Song ID " + songs[0].id + " is " + _trackID); 
+			--counts;
+		})
+}
+        </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Create Spotify Playlist from Echo Nest IDs</h1>
+            <p class="description">Given a playlist name and a list of Echo Nest song IDs, create a playlist by that name, and populate it with as many of the Songs that have Tracks as possible</p>
+
+			<h2>Playlist Definition<h2>
+			Playlist name: <br />
+			<input type="text" id="_name" placeholder="Enter a valid Spotify playlist name" size="50"/><br /><br />
+			
+			Echo Nest Song IDs:<br />
+			<textarea id="_ids" placeholder="Enter EN Song IDs here; one per line" cols="50" rows="15"></textarea><br /><br />
+			
+			<input type="submit" id="_go" value="Make Playlist!" onclick="make_it();" />
+        </div><!-- /wrapper -->
+    </body>
+</html>
