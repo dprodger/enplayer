@@ -11,15 +11,17 @@
         <script src="sp://enplayer/js/jquery.min.js"></script>
         <script src="sp://enplayer/js/rainbow-custom.min.js"></script>
 
-        <script>
-			jQuery.ajaxSettings.traditional = true;  
+<script>
+jQuery.ajaxSettings.traditional = true;  
 
-            $(document).ready(function() {
-                /* Instantiate the global sp object; include models & views */
-                var sp = getSpotifyApi(1);
-                var models = sp.require('sp://import/scripts/api/models');
+var sp;
+var models;
 
-            });
+$(document).ready(function() {
+	/* Instantiate the global sp object; include models & views */
+	sp = getSpotifyApi(1);
+	models = sp.require('sp://import/scripts/api/models');
+});
 
 var enSongs = [];
 var enToSpotIds = {};
@@ -33,52 +35,53 @@ function make_it() {
 	songIDs = $("#_ids").val();
 	
 	enSongs = new Array();
+	$("#results-list").empty();
 	
 	if( ""===playlistName || ""===songIDs ) {
 		alert( "You need to provide both a playlist name and IDs");
 	} else {
-        var sp = getSpotifyApi(1);
-        var models = sp.require('sp://import/scripts/api/models');
-		
-		pl = new models.Playlist( playlistName );
-		
 		var lines = songIDs.split( "\n" );
 		
+		//TODO fix this up--it's pretty gross
 		for( i = 0; i < lines.length; i++ ) {
 			_line = lines[i];
 			_song = _line.indexOf( "SO");
 			_thesong = _line.substring( _song, _song + 18 );
-			console.log( "_line is " + _line);
-			console.log( "_thesong is " + _thesong );
+//			console.log( "_line is " + _line);
+//			console.log( "_thesong is " + _thesong );
 			
 			if( _thesong ) {
 				enSongs.push( _thesong );
 				++counts;
+				var parentList = document.getElementById("results-list");
+				var listitem = document.createElement("li");
+				listitem.setAttribute('id', _thesong);
+				listitem.innerHTML = "Song: " + _thesong;
+				parentList.appendChild( listitem );
 				lookupSpotifyID( _thesong );
 			} else {
-				console.log( "skipping blank song");
+//				console.log( "skipping blank song");
 			}
 		}
-		
-		waitForResults();
 	}
 }
 
-function waitForResults() {
-	if( counts < 1 ) {
-		finishIt();
-	} else {
-		setTimeout( waitForResults, 500 );
-	}
-}
+function create_it() {
+	// actually make the playlist
+	//TODO if playlist name is in use, see about overwriting vs making a new one
+	playlistName = $("#_name").val();
+	pl = new models.Playlist( playlistName );	
 
-function finishIt() {
-	console.log("*** in finishIt");
+	console.log("*** in create_it");
 	for( i = 0; i < enSongs.length; i++ ) {
 		_song = enSongs[ i ];
 		_spotifyTrack = enToSpotIds[ _song ];
-		console.log( "EN Song ID " + _song + " is " + _spotifyTrack );
-		pl.add( _spotifyTrack );
+		if( _spotifyTrack ) {
+			console.log( "EN Song ID " + _song + " is " + _spotifyTrack );
+			pl.add( _spotifyTrack );
+		} else { 
+			console.log( "EN Song ID " + _song + " has no valid tracks; skipping.");
+		}
 	}
 }
 
@@ -99,12 +102,76 @@ function lookupSpotifyID( _song ) {
 			var tracks = songs[0].tracks;
 			//TODO if there are multiple tracks, check them all to see which are valid in this region...
 			
-			var _track = tracks[0];
-			var _trackID = _track.foreign_id.replace("spotify-WW", "spotify");
+			var _trackID = findValidTrack( songs[0].id, tracks );
+			var _trackID = _trackID.replace("spotify-WW", "spotify");
 			enToSpotIds[ songs[0].id ] = _trackID;
 			console.log( "EN Song ID " + songs[0].id + " is " + _trackID); 
 			--counts;
 		})
+}
+
+// just return first track
+// eventually get all tracks, and walk until we get one that is valid for this region
+var trackCount = [];
+
+var validTracks = [];
+
+
+function findValidTrack( songID, tracks ) {
+	console.log("* in findValidTrack for " + songID + " and I have " + tracks.length + " tracks to check" );
+	trackCount[ songID ] = 0;
+	
+	// set default so we know if none found
+	var plItem = document.getElementById( songID );
+	plItem.innerHTML = "Song: " + songID + "; no valid tracks found yet.";
+	enToSpotIds[ songID ] = null;
+	
+	for( i = 0; i < tracks.length; i++ ) {
+		trackCount[ songID ]++;
+		console.log( "*** songID = " + songID + "; trackCount is " + trackCount[ songID ] );
+		var _trackID = tracks[i].foreign_id.replace("spotify-WW", "spotify");
+    	
+		var t = models.Track.fromURI( _trackID, function(track) {
+			console.log( "--- in inner function for songID = " + songID + "; trackCount is " + trackCount[ songID ] );
+
+			trackCount[ songID ]--;
+			console.log( "track " + track.uri + "; is playable? " + track.playable + "; album year is " + track.album.year );
+			
+			if( track.playable) {
+				var _uri = track.uri;
+				var _year = track.album.year;
+				var _title = track.name;
+				var _album = track.album.name;
+				
+				if( validTracks[songID] ) {
+					if( validTracks[songID].year > track.album.year) {
+						validTracks[songID] = { "id":_uri, "year":_year , "title":_title, "album":_album};
+						console.log("track: " + track.uri + "is the new best track for song " + songID );
+					}
+				
+				} else {
+					validTracks[songID] = { "id":_uri, "year":_year , "title":_title, "album":_album};
+					console.log("track: " + track.uri + "is the new best track for song " + songID );
+				}
+				var plItem = document.getElementById( songID );
+				plItem.innerHTML = "EN: " + songID + " SP: " + validTracks[songID].id + " ; Title: " + validTracks[songID].title + " (" +validTracks[songID].year + ", " + validTracks[songID].album + ")";
+				enToSpotIds[ songID ] = validTracks[songID].id;
+			}
+		} );
+	}
+	
+	waitForTrackCompletion( songID );
+	
+	console.log("the validTrack for songID " + songID + " is " + validTracks[ songID ].id );
+	return validTracks[ songID ].id;
+}
+
+function waitForTrackCompletion( songID ) {
+	if( trackCount[ songID ] < 1 ) {
+		return;
+	}
+	
+	setTimeout( waitForTrackCompletion( songID ), 500 );
 }
         </script>
     </head>
@@ -118,9 +185,16 @@ function lookupSpotifyID( _song ) {
 			<input type="text" id="_name" placeholder="Enter a valid Spotify playlist name" size="50"/><br /><br />
 			
 			Echo Nest Song IDs:<br />
-			<textarea id="_ids" placeholder="Enter EN Song IDs here; one per line" cols="50" rows="15"></textarea><br /><br />
+			<textarea id="_ids" placeholder="Enter EN Song IDs here; one per line" cols="100" rows="15"></textarea><br /><br />
 			
 			<input type="submit" id="_go" value="Make Playlist!" onclick="make_it();" />
+			
+			<h2>Resultant Playlist</h2>
+			<div id="results">
+				<ul id="results-list">
+				</ul>
+			</div>
+			<input type="submit" id="_forreals" value="Create Playlist" onclick="create_it();" />
         </div><!-- /wrapper -->
     </body>
 </html>
