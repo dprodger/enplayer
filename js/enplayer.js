@@ -7,36 +7,26 @@ var pl;
 
 function make_it() {
 	playlistName = $("#_name").val();
-	songIDs = $("#_ids").val();
 	
 	enSongs = new Array();
 	$("#results-list").empty();
-	
+    var songIDs = $("#_ids").val();
+
 	if( ""===playlistName || ""===songIDs ) {
 		alert( "You need to provide both a playlist name and IDs");
 	} else {
-		var lines = songIDs.split( "\n" );
-		
-		//TODO fix this up--it's pretty gross
-		for( i = 0; i < lines.length; i++ ) {
-			_line = lines[i];
-			_song = _line.indexOf( "SO");
-			_thesong = _line.substring( _song, _song + 18 );
-//			console.log( "_line is " + _line);
-//			console.log( "_thesong is " + _thesong );
-			
-			if( _thesong && _thesong.substring(2,0) == "SO" ) {
-				enSongs.push( _thesong );
-				++counts;
-				var parentList = document.getElementById("results-list");
-				var listitem = document.createElement("li");
-				listitem.setAttribute('id', _thesong);
-				listitem.innerHTML = "Song: " + _thesong;
-				parentList.appendChild( listitem );
-				lookupSpotifyID( _thesong );
-			} else {
-//				console.log( "skipping blank song");
-			}
+        var songIDs = songIDs.match(/SO[A-Z0-9]{16}/g);
+        console.log("songIDs match", songIDs)
+		for( i = 0; i < songIDs.length; i++ ) {
+            var _thesong = songIDs[i];
+            enSongs.push( _thesong );
+            ++counts;
+            var parentList = document.getElementById("results-list");
+            var listitem = document.createElement("li");
+            listitem.setAttribute('id', _thesong);
+            listitem.innerHTML = "Song: " + _thesong;
+            parentList.appendChild( listitem );
+            lookupSpotifyID( _thesong );
 		}
 	}
 }
