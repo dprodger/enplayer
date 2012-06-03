@@ -72,25 +72,23 @@ function lookupSpotifyID( _song ) {
 			"limit": true
 		},
 		function(data) {
+//			console.log("=== in function for lookupSpotifyID for id " + _song );
 			var response = data.response;
 			var songs = response.songs;
-			var tracks = songs[0].tracks;
-			//TODO if there are multiple tracks, check them all to see which are valid in this region...
-			
-			var _trackID = findValidTrack( songs[0].id, tracks );
-			var _trackID = _trackID.replace("spotify-WW", "spotify");
-			enToSpotIds[ songs[0].id ] = _trackID;
-			console.log( "EN Song ID " + songs[0].id + " is " + _trackID); 
+			if(!songs[0] ) {
+				var plItem = document.getElementById( _song );
+				plItem.innerHTML = "EN: " + _song + " has no Spotify tracks at all.";
+				console.log("ERROR: no songs returned for id " + _song);
+			} else {
+				var tracks = songs[0].tracks;
+				findValidTrack( songs[ 0 ].id, tracks );
+			}
 			--counts;
 		})
 }
 
-// just return first track
-// eventually get all tracks, and walk until we get one that is valid for this region
 var trackCount = [];
-
 var validTracks = [];
-
 
 function findValidTrack( songID, tracks ) {
 	console.log("* in findValidTrack for " + songID + " and I have " + tracks.length + " tracks to check" );
@@ -134,17 +132,4 @@ function findValidTrack( songID, tracks ) {
 			}
 		} );
 	}
-	
-	waitForTrackCompletion( songID );
-	
-	console.log("the validTrack for songID " + songID + " is " + validTracks[ songID ].id );
-	return validTracks[ songID ].id;
-}
-
-function waitForTrackCompletion( songID ) {
-	if( trackCount[ songID ] < 1 ) {
-		return;
-	}
-	
-	setTimeout( waitForTrackCompletion( songID ), 500 );
 }
