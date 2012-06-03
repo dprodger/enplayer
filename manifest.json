@@ -1,12 +1,12 @@
 {
 	"AppDescription": {
-		"en": "A tutorial app for Spotify Apps API"
+		"en": "Utility tool for generating a playlist from a list of Echo Nest song IDs"
 	},
 	"AppIcon": {
 		"36x18": "tutorial.png"
 	},
 	"AppName": {
-		"en": "Spotify Apps API Tutorial"
+		"en": "Echo Nest Playlist Maker"
 	},
 	"BundleIdentifier": "enplayer",
 	"BundleType": "Application",
@@ -29,5 +29,5 @@
 	"SupportedLanguages": [
 		"en"
 	],
-	"VendorIdentifier": "co.mager"
+	"VendorIdentifier": "co.drodger"
 }
