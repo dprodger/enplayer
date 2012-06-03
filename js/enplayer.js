@@ -37,12 +37,12 @@ function create_it() {
 	playlistName = $("#_name").val();
 	pl = new models.Playlist( playlistName );	
 
-	console.log("*** in create_it");
+//	console.log("*** in create_it");
 	for( i = 0; i < enSongs.length; i++ ) {
 		_song = enSongs[ i ];
 		_spotifyTrack = enToSpotIds[ _song ];
 		if( _spotifyTrack ) {
-			console.log( "EN Song ID " + _song + " is " + _spotifyTrack );
+//			console.log( "EN Song ID " + _song + " is " + _spotifyTrack );
 			pl.add( _spotifyTrack );
 		} else { 
 			console.log( "EN Song ID " + _song + " has no valid tracks; skipping.");
@@ -81,24 +81,24 @@ var trackCount = [];
 var validTracks = [];
 
 function findValidTrack( songID, tracks ) {
-	console.log("* in findValidTrack for " + songID + " and I have " + tracks.length + " tracks to check" );
+//	console.log("* in findValidTrack for " + songID + " and I have " + tracks.length + " tracks to check" );
 	trackCount[ songID ] = 0;
 	
 	// set default so we know if none found
 	var plItem = document.getElementById( songID );
-	plItem.innerHTML = "Song: " + songID + "; no valid tracks found yet.";
+	plItem.innerHTML = "<b><i>Song: " + songID + "; no valid tracks found yet.</i></b>";
 	enToSpotIds[ songID ] = null;
 	
 	for( i = 0; i < tracks.length; i++ ) {
 		trackCount[ songID ]++;
-		console.log( "*** songID = " + songID + "; trackCount is " + trackCount[ songID ] );
+//		console.log( "*** songID = " + songID + "; trackCount is " + trackCount[ songID ] );
 		var _trackID = tracks[i].foreign_id.replace("spotify-WW", "spotify");
     	
 		var t = models.Track.fromURI( _trackID, function(track) {
-			console.log( "--- in inner function for songID = " + songID + "; trackCount is " + trackCount[ songID ] );
+//			console.log( "--- in inner function for songID = " + songID + "; trackCount is " + trackCount[ songID ] );
 
 			trackCount[ songID ]--;
-			console.log( "track " + track.uri + "; is playable? " + track.playable + "; album year is " + track.album.year );
+//			console.log( "track " + track.uri + "; is playable? " + track.playable + "; album year is " + track.album.year );
 			
 			if( track.playable) {
 				var _uri = track.uri;
@@ -109,15 +109,16 @@ function findValidTrack( songID, tracks ) {
 				if( validTracks[songID] ) {
 					if( validTracks[songID].year > track.album.year) {
 						validTracks[songID] = { "id":_uri, "year":_year , "title":_title, "album":_album};
-						console.log("track: " + track.uri + "is the new best track for song " + songID );
+//						console.log("track: " + track.uri + "is the new best track for song " + songID );
 					}
 				
 				} else {
 					validTracks[songID] = { "id":_uri, "year":_year , "title":_title, "album":_album};
-					console.log("track: " + track.uri + "is the new best track for song " + songID );
+//					console.log("track: " + track.uri + "is the new best track for song " + songID );
 				}
 				var plItem = document.getElementById( songID );
-				plItem.innerHTML = "EN: " + songID + " SP: " + validTracks[songID].id + " ; Title: " + validTracks[songID].title + " (" +validTracks[songID].year + ", " + validTracks[songID].album + ")";
+				plItem.innerHTML = "<b>" + validTracks[songID].title + " (" +validTracks[songID].album + ", " + validTracks[songID].year + ")</b> <i>[" + songID + ";" + validTracks[songID].id + "]</i>";
+//				plItem.innerHTML = "EN: " + songID + " SP: " + validTracks[songID].id + " ; Title: " + validTracks[songID].title + " (" +validTracks[songID].year + ", " + validTracks[songID].album + ")";
 				enToSpotIds[ songID ] = validTracks[songID].id;
 			}
 		} );
