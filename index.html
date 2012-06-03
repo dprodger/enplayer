@@ -50,7 +50,7 @@ function make_it() {
 //			console.log( "_line is " + _line);
 //			console.log( "_thesong is " + _thesong );
 			
-			if( _thesong ) {
+			if( _thesong && _thesong.substring(2,0) == "SO" ) {
 				enSongs.push( _thesong );
 				++counts;
 				var parentList = document.getElementById("results-list");
