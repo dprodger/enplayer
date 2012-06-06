@@ -37,7 +37,8 @@ $(document).ready(function() {
 			Playlist name: <br />
 			<input type="text" id="_name" placeholder="Enter a valid Spotify playlist name" size="50"/><br /><br />
 			
-			Echo Nest Song IDs:<br />
+			Echo Nest Song IDs: 
+			<button class="button" id="_reset" onclick="resetTextarea()">Reset text area</button></br>
 			<textarea id="_ids" placeholder="Enter EN Song IDs here; one per line" cols="100" rows="15"></textarea><br /><br />
 			
 			<input type="submit" id="_go" value="Make Playlist!" onclick="make_it();" />

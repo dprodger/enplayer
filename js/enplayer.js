@@ -31,6 +31,10 @@ function make_it() {
 	}
 }
 
+
+function resetTextarea() {
+	$("#_ids").val("");
+}
 function create_it() {
 	// actually make the playlist
 	//TODO if playlist name is in use, see about overwriting vs making a new one
